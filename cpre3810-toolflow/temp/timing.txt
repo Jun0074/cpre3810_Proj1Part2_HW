@@ -1,0 +1,71 @@
+
+#
+# CprE 381 toolflow Timing dump
+#
+
+FMax: 60.06mhz Clk Constraint: 20.00ns Slack: 3.35ns
+
+The path is given below
+
+ ===================================================================
+ From Node    : ID_EXE:IDEX|RegN:r_ALUOp|dffg:\Ndffg_Reg:1:dffg_N|s_Q
+ To Node      : IFID_Register:IFID|RegN:r_Inst|dffg:\Ndffg_Reg:9:dffg_N|s_Q
+ Launch Clock : iCLK
+ Latch Clock  : iCLK
+ Data Arrival Path:
+ Total (ns)  Incr (ns)     Type  Element
+ ==========  ========= ==  ====  ===================================
+      0.000      0.000           launch edge time
+      3.112      3.112  R        clock network delay
+      3.344      0.232     uTco  ID_EXE:IDEX|RegN:r_ALUOp|dffg:\Ndffg_Reg:1:dffg_N|s_Q
+      3.344      0.000 FF  CELL  IDEX|r_ALUOp|\Ndffg_Reg:1:dffg_N|s_Q|q
+      4.246      0.902 FF    IC  u_ALU|Equal0~0|datac
+      4.506      0.260 FR  CELL  u_ALU|Equal0~0|combout
+      5.515      1.009 RR    IC  u_ALU|u_sh|s2RA[18]~22|datad
+      5.654      0.139 RF  CELL  u_ALU|u_sh|s2RA[18]~22|combout
+      6.519      0.865 FF    IC  u_ALU|u_sh|s2RA[18]~23|datac
+      6.800      0.281 FF  CELL  u_ALU|u_sh|s2RA[18]~23|combout
+      7.092      0.292 FF    IC  u_ALU|u_sh|s3RA[14]~40|datab
+      7.485      0.393 FF  CELL  u_ALU|u_sh|s3RA[14]~40|combout
+      7.758      0.273 FF    IC  u_ALU|u_sh|s3RA[14]~41|datab
+      8.183      0.425 FF  CELL  u_ALU|u_sh|s3RA[14]~41|combout
+      8.942      0.759 FF    IC  u_ALU|u_sh|s4RA[6]~34|datad
+      9.067      0.125 FF  CELL  u_ALU|u_sh|s4RA[6]~34|combout
+      9.303      0.236 FF    IC  u_ALU|u_sh|s4RA[6]~35|datac
+      9.584      0.281 FF  CELL  u_ALU|u_sh|s4RA[6]~35|combout
+     10.251      0.667 FF    IC  u_ALU|u_sh|s5RA[6]~16|datac
+     10.532      0.281 FF  CELL  u_ALU|u_sh|s5RA[6]~16|combout
+     10.821      0.289 FF    IC  u_ALU|u_sh|s5RA[6]~17|dataa
+     11.245      0.424 FF  CELL  u_ALU|u_sh|s5RA[6]~17|combout
+     11.471      0.226 FF    IC  u_ALU|o_Y[6]~47|datad
+     11.596      0.125 FF  CELL  u_ALU|o_Y[6]~47|combout
+     12.638      1.042 FF    IC  u_ALU|o_Y[6]~48|datab
+     13.042      0.404 FF  CELL  u_ALU|o_Y[6]~48|combout
+     13.343      0.301 FF    IC  u_ALU|Equal12~1|dataa
+     13.772      0.429 FR  CELL  u_ALU|Equal12~1|combout
+     13.974      0.202 RR    IC  u_ALU|Equal12~5|datad
+     14.129      0.155 RR  CELL  u_ALU|Equal12~5|combout
+     14.334      0.205 RR    IC  Mux0~0|datac
+     14.604      0.270 RF  CELL  Mux0~0|combout
+     14.834      0.230 FF    IC  Mux0~1|datad
+     14.959      0.125 FF  CELL  Mux0~1|combout
+     16.362      1.403 FF    IC  Mux0~3|datac
+     16.642      0.280 FF  CELL  Mux0~3|combout
+     16.903      0.261 FF    IC  s_PCsrc|datad
+     17.028      0.125 FF  CELL  s_PCsrc|combout
+     19.260      2.232 FF    IC  IFID|s_Instr_D[9]~30|datac
+     19.520      0.260 FR  CELL  IFID|s_Instr_D[9]~30|combout
+     19.520      0.000 RR    IC  IFID|r_Inst|\Ndffg_Reg:9:dffg_N|s_Q|d
+     19.607      0.087 RR  CELL  IFID_Register:IFID|RegN:r_Inst|dffg:\Ndffg_Reg:9:dffg_N|s_Q
+ Data Required Path:
+ Total (ns)  Incr (ns)     Type  Element
+ ==========  ========= ==  ====  ===================================
+     20.000     20.000           latch edge time
+     22.950      2.950  R        clock network delay
+     22.958      0.008           clock pessimism removed
+     22.938     -0.020           clock uncertainty
+     22.956      0.018     uTsu  IFID_Register:IFID|RegN:r_Inst|dffg:\Ndffg_Reg:9:dffg_N|s_Q
+ Data Arrival Time  :    19.607
+ Data Required Time :    22.956
+ Slack              :     3.349
+ ===================================================================

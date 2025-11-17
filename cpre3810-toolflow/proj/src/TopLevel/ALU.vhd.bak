@@ -1,0 +1,111 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity ALU is
+  port(
+    i_A       : in  std_logic_vector(31 downto 0);
+    i_B       : in  std_logic_vector(31 downto 0);
+    i_ALUOp   : in  std_logic_vector(3 downto 0);
+    o_Y       : out std_logic_vector(31 downto 0);
+    o_Zero    : out std_logic;
+    o_LT      : out std_logic;
+    o_LTU     : out std_logic;
+    o_Ovfl    : out std_logic
+  );
+end entity;
+
+architecture dataflow of ALU is
+  -- ALU operation codes
+  constant ALU_AND  : std_logic_vector(3 downto 0) := "0000";
+  constant ALU_OR   : std_logic_vector(3 downto 0) := "0001";
+  constant ALU_ADD  : std_logic_vector(3 downto 0) := "0010";
+  constant ALU_SUB  : std_logic_vector(3 downto 0) := "0011";
+  constant ALU_XOR  : std_logic_vector(3 downto 0) := "0100";
+  constant ALU_SLT  : std_logic_vector(3 downto 0) := "0111";
+  constant ALU_SLTU : std_logic_vector(3 downto 0) := "1000";
+  constant ALU_SLL  : std_logic_vector(3 downto 0) := "1001";
+  constant ALU_SRL  : std_logic_vector(3 downto 0) := "1010";
+  constant ALU_SRA  : std_logic_vector(3 downto 0) := "1011";
+
+  -- Numeric type views for signed/unsigned conversion
+  signal A_s, B_s  : signed(31 downto 0);
+  signal A_u, B_u  : unsigned(31 downto 0);
+  signal shamt     : std_logic_vector(4 downto 0);
+
+  -- Intermediate results
+  signal sum, diff : signed(31 downto 0);
+  signal ov_add, ov_sub : std_logic;
+  signal res, sh_out : std_logic_vector(31 downto 0);
+
+  -- Shifter control
+  signal sh_right, sh_arith : std_logic;
+
+  -- BarrelShifter component (no change here)
+  component BarrelShifter32
+    port(
+      i_D     : in  std_logic_vector(31 downto 0);
+      i_SA    : in  std_logic_vector(4 downto 0);
+      i_Right : in  std_logic;  -- 0 = left, 1 = right
+      i_Arith : in  std_logic;  -- only matters if right = 1
+      o_Y     : out std_logic_vector(31 downto 0)
+    );
+  end component;
+
+begin
+  -- Numeric view mappings (same as before)
+  A_s   <= signed(i_A);
+  B_s   <= signed(i_B);
+  A_u   <= unsigned(i_A);
+  B_u   <= unsigned(i_B);
+  shamt <= i_B(4 downto 0);
+
+  -- Shifter control signals
+  sh_right <= '0' when i_ALUOp = ALU_SLL else '1';
+  sh_arith <= '1' when i_ALUOp = ALU_SRA else '0';
+
+  -- Structural Barrel Shifter instance
+  U_SHIFTER : BarrelShifter32
+    port map(
+      i_D     => i_A,
+      i_SA    => shamt,
+      i_Right => sh_right,
+      i_Arith => sh_arith,
+      o_Y     => sh_out
+    );
+
+  -- Arithmetic dataflow
+  sum  <= A_s + B_s;
+  diff <= A_s - B_s;
+
+  -- Overflow logic
+  ov_add <= '1' when (i_ALUOp = ALU_ADD) and ((A_s(31) = B_s(31)) and (sum(31) /= A_s(31))) else '0';
+  ov_sub <= '1' when (i_ALUOp = ALU_SUB) and ((A_s(31) /= B_s(31)) and (diff(31) /= A_s(31))) else '0';
+  o_Ovfl <= ov_add or ov_sub;
+
+  -- Main ALU result select (dataflow)
+  with i_ALUOp select
+    res <= std_logic_vector(unsigned(i_A) and unsigned(i_B))      when ALU_AND,
+           std_logic_vector(unsigned(i_A) or unsigned(i_B))      when ALU_OR,
+           std_logic_vector(sum)                                    when ALU_ADD,
+           std_logic_vector(diff)                                   when ALU_SUB,
+           std_logic_vector(unsigned(i_A) xor unsigned(i_B))       when ALU_XOR,
+           sh_out                                                   when ALU_SLL | ALU_SRL | ALU_SRA,
+           (others => '0')                                          when others;
+
+  -- SLT / SLTU results (set flags)
+  -- Use concurrent `when else` for SLT and SLTU comparison
+  res <= (31 downto 1 => '0') & '1' when (i_ALUOp = ALU_SLT) and (A_s < B_s) else res;
+  res <= (others => '0')        when (i_ALUOp = ALU_SLT) and not (A_s < B_s) else res;
+
+  res <= (31 downto 1 => '0') & '1' when (i_ALUOp = ALU_SLTU) and (A_u < B_u) else res;
+  res <= (others => '0')        when (i_ALUOp = ALU_SLTU) and not (A_u < B_u) else res;
+
+  -- Output assignments
+  o_Y    <= res;
+  o_Zero <= '1' when res = x"00000000" else '0';
+  o_LT   <= '1' when A_s < B_s else '0';
+  o_LTU  <= '1' when A_u < B_u else '0';
+
+end architecture;
+
