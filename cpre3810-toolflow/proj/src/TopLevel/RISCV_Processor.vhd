@@ -120,6 +120,9 @@ architecture structure of RISCV_Processor is
   
   -- ImmGen output
   signal s_ImmExt    : std_logic_vector(N-1 downto 0); -- from ImmGen (placeholder)
+  
+  -- Hazard/flush/stall controls
+  signal stallF, stallD, flushD, flushE : std_logic;
 
 -- Signals for Pipeline register
   -- IF/ID
@@ -208,10 +211,26 @@ architecture structure of RISCV_Processor is
     port(
       i_clk : in std_logic;
       i_rst : in std_logic; -- Active-high reset
+      i_en    : in std_logic; -- 1 = update PC, 0 = hold
       i_PCsrc : in std_logic;
       i_newPC : in std_logic_vector(N-1 downto 0); -- Immediate Input
       o_PC  : out std_logic_vector(N-1 downto 0)
     );
+  end component;
+
+  component hazard_unit is
+  port(
+    ifid_Inst       : in  std_logic_vector(31 downto 0);
+    idex_rd         : in  std_logic_vector(4 downto 0);
+    idex_RegWrite   : in  std_logic;
+    exmem_rd        : in  std_logic_vector(4 downto 0);
+    exmem_RegWrite  : in  std_logic;
+    s_PCsrc_taken   : in  std_logic;  -- (s_BrTaken or idex_Jump)
+    stallF          : out std_logic;
+    stallD          : out std_logic;
+    flushD          : out std_logic;  -- squash IF/ID
+    flushE          : out std_logic   -- bubble ID/EX
+  );
   end component;
 
   -- LoadType: 000=lw, 001=lh, 010=lb, 011=lbu, 100=lhu
@@ -340,6 +359,7 @@ begin
     port map(
       i_clk   => iCLK,
       i_rst   => iRST,
+      i_en    => not stallF,     -- NEW: hold PC when hazard unit stalls fetch
       i_PCsrc => s_PCsrc,   -- PC source select: 0 = PC+4, 1 = new branch/jump target
       i_newPC => s_NewPC,   -- Next PC input (from ALU result for branch/jump)
       o_PC    => s_NextInstAddr   -- Output current PC value to instruction memory
@@ -363,8 +383,10 @@ begin
     generic map(N => N)
     port map(
       i_CLK => iCLK, i_RST => iRST,
-      i_WE  => '1',                  -- no stall yet
-      i_FLUSH => s_PCsrc,         --0 for SW-- flush on taken branch/jump 
+      i_WE  => not stallD,  -- NEW: hold IF/ID on stallD
+      -- i_WE  => '1',                  -- no stall yet
+      -- i_FLUSH => s_PCsrc,       -- TODO might need to change  --0 for SW-- flush on taken branch/jump 
+       i_FLUSH  => flushD,   -- squash IF/ID
       i_PC => s_NextInstAddr,
       i_PCplus4 => s_PCplus4,
       i_Instr => s_Inst,
@@ -432,8 +454,8 @@ begin
     generic map(N => N)
     port map(
       i_CLK => iCLK, i_RST => iRST, i_WE => '1', 
-      i_FLUSH => '0', --0 for SW-- flush on taken branch/jump
-
+      -- i_FLUSH => '0', --0 for SW-- flush on taken branch/jump
+      i_FLUSH => flushE,  -- NEW: flush on hazard unit signal
       i_oRS1 => s_RS1Data,   i_oRS2 => s_RS2Data,
       i_rd => ifid_Inst(11 downto 7),
       i_rs1 => ifid_Inst(19 downto 15),
@@ -544,6 +566,22 @@ begin
       exmem_ResultSrc => exmem_ResultSrc,
       exmem_LoadType  => exmem_LoadType
     );
+
+    --Hazard unit (no-forwarding baseline) 
+  HU: hazard_unit
+  port map(
+    ifid_Inst      => ifid_Inst,
+    idex_rd        => idex_rd,
+    idex_RegWrite  => idex_RegWrite,
+    exmem_rd       => exmem_rd,
+    exmem_RegWrite => exmem_RegWrite,
+    s_PCsrc_taken  => s_PCsrc, 
+    stallF         => stallF,
+    stallD         => stallD,
+    flushD         => flushD,
+    flushE         => flushE
+  );
+
   -- Connect EX/MEM outputs to data memory inputs' 
   -- Data Memory
   DMem: mem
@@ -568,7 +606,7 @@ begin
     port map(
       i_word     => s_DMemOut,                -- 32-bit word from data memory
       i_addr_low => exmem_ALUResult(1 downto 0),   -- byte offset from address
-      i_LType    => exmem_loadType,               -- s_Ctrl(3 downto 1)
+      i_LType    => exmem_LoadType,               -- s_Ctrl(3 downto 1)
       o_data     => s_LoadExt                -- extended load result
     );
   
