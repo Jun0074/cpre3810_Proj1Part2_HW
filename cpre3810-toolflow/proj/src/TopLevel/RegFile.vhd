@@ -49,7 +49,8 @@ type reg_bank_t is array (31 downto 0) of std_logic_vector(31 downto 0);
   signal s_we   : std_logic_vector(31 downto 0);     -- per-register WE (renamed)
   signal s_q    : reg_bank_t;                        -- each register's Q
   signal s_flat : std_logic_vector(1023 downto 0);   -- concat Qs to muxes
-
+   signal s_rs1_raw, s_rs2_raw : std_logic_vector(31 downto 0);  -- HW, dual read ports (raw, from the array)
+ 
 begin
   -- decoder: write-destination selection
   dec: decoder5to32
@@ -84,8 +85,17 @@ begin
 
   -- dual read ports
   mux1: mux32to1_32bit
-    port map ( sel => i_RS1, i_D => s_flat, o_Q => o_RS1 );
-
+    --port map ( sel => i_RS1, i_D => s_flat, o_Q => o_RS1 );
+      port map ( sel => i_RS1, i_D => s_flat, o_Q => s_rs1_raw );
   mux2: mux32to1_32bit
-    port map ( sel => i_RS2, i_D => s_flat, o_Q => o_RS2 );
+    --port map ( sel => i_RS2, i_D => s_flat, o_Q => o_RS2 );
+    port map ( sel => i_RS2, i_D => s_flat, o_Q => s_rs2_raw );
+ 
+  -- same-cycle write bypass 
+  o_RS1 <= i_WD when (i_WE='1' and i_RD = i_RS1 and i_RD /= "00000")
+           else s_rs1_raw;
+
+  o_RS2 <= i_WD when (i_WE='1' and i_RD = i_RS2 and i_RD /= "00000")
+           else s_rs2_raw;
+           
 end architecture;
