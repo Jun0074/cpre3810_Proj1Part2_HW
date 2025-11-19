@@ -7,6 +7,7 @@ entity fetch is
   port(
     i_clk : in std_logic;
     i_rst : in std_logic; -- Active-high reset
+    i_en    : in std_logic; -- NEW: 1=update PC, 0=hold (stallF)
     i_PCsrc : in std_logic;
     i_newPC : in std_logic_vector(N-1 downto 0); -- Immediate Input
     o_PC  : out std_logic_vector(N-1 downto 0)
@@ -68,14 +69,16 @@ begin
       o_O       => s_PC_next
     );
 
-  -- Sequential update (register)
+  -- Sequential update (register) Updated to support Stall
   process(i_clk, i_rst)
   begin
     if (i_rst = '1') then
-     -- s_PC_current <= (others => '0');
-     s_PC_current <=x"00400000"; -- set PC start at 0x00400000 initially
+      -- Start at 0x00400000 (your choice)
+      s_PC_current <= x"00400000";
     elsif rising_edge(i_clk) then
-      s_PC_current <= s_PC_next;
+      if i_en = '1' then            -- stall here
+        s_PC_current <= s_PC_next;
+      end if;                       -- else: hold (stall)
     end if;
   end process;
 
