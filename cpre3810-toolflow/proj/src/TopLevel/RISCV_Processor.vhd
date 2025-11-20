@@ -123,6 +123,8 @@ architecture structure of RISCV_Processor is
   
   -- Hazard/flush/stall controls
   signal stallF, stallD, flushD, flushE : std_logic;
+  --signal s_JumpID : std_logic;   -- NEW: early jump detect in ID
+
 
 -- Signals for Pipeline register
   -- IF/ID
@@ -420,6 +422,8 @@ begin
       s_LoadType <= s_Ctrl(3 downto 1);
       s_Halt_Pipeline     <= s_Ctrl(0);
 
+      --s_JumpID <= s_Jump;
+
   
   -- Connect s_RegWrAddr to address in instructions
   --s_RegWrAddr <= s_Inst(11 downto 7);
@@ -575,7 +579,7 @@ begin
     idex_RegWrite  => idex_RegWrite,
     exmem_rd       => exmem_rd,
     exmem_RegWrite => exmem_RegWrite,
-    s_PCsrc_taken  => s_PCsrc, 
+    s_PCsrc_taken  => s_PCsrc, -- (s_BrTaken or idex_Jump)
     stallF         => stallF,
     stallD         => stallD,
     flushD         => flushD,

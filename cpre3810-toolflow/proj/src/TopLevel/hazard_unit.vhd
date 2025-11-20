@@ -26,6 +26,9 @@ end hazard_unit;
 architecture structural of hazard_unit is
   -- Decode consumer tags from IF/ID instruction
   signal rs1, rs2        : std_logic_vector(4 downto 0);
+  signal opcode      : std_logic_vector(6 downto 0);
+  signal use_rs1     : std_logic; -- jal
+  signal use_rs2     : std_logic; -- jal
   -- RAW hazard flags (no forwarding)
   signal hazard_idex     : std_logic;
   signal hazard_exmem    : std_logic;
@@ -34,16 +37,40 @@ begin
   -- Extract RS fields (RISC-V encoding)
   rs1 <= ifid_Inst(19 downto 15);
   rs2 <= ifid_Inst(24 downto 20);
+  opcode <= ifid_Inst(6 downto 0);
+
+  -- Determine if RS1/RS2 are actually used by this instruction
+   use_rs1 <= '1' when (
+                opcode = "0110011" or  -- R-type
+                opcode = "0010011" or  -- I-type ALU
+                opcode = "0000011" or  -- LOAD
+                opcode = "0100011" or  -- STORE
+                opcode = "1100011" or  -- BRANCH
+                opcode = "1100111"     -- JALR
+              )
+            else '0';
+
+  use_rs2 <= '1' when (
+                opcode = "0110011" or  -- R-type
+                opcode = "0100011" or  -- STORE
+                opcode = "1100011"     -- BRANCH
+              )
+            else '0';
+
 
   -- RAW if ID consumes a value still in ID/EX
-  hazard_idex  <= '1' when (idex_RegWrite = '1' and idex_rd /= "00000" and
-                            (idex_rd = rs1 or idex_rd = rs2))
-                  else '0';
+   hazard_idex <= '1' when
+      (idex_RegWrite = '1' and idex_rd /= "00000" and
+       ((use_rs1 = '1' and idex_rd = rs1) or
+        (use_rs2 = '1' and idex_rd = rs2)))
+    else '0';
 
   -- RAW if ID consumes a value still in EX/MEM
-  hazard_exmem <= '1' when (exmem_RegWrite = '1' and exmem_rd /= "00000" and
-                            (exmem_rd = rs1 or exmem_rd = rs2))
-                  else '0';
+ hazard_exmem <= '1' when
+      (exmem_RegWrite = '1' and exmem_rd /= "00000" and
+       ((use_rs1 = '1' and exmem_rd = rs1) or
+        (use_rs2 = '1' and exmem_rd = rs2)))
+    else '0';
 
   data_hazard_any <= hazard_idex or hazard_exmem;
 

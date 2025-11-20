@@ -1,13 +1,17 @@
 [N
-6
+8
 4
 1 N
+8
+6 ex_mem
 6
 9 structure
 2
 4 regn
 1
-79 /home/teoh/cpre381/cpre3810_Proj1Part2/cpre3810-toolflow/proj/src/TopLevel/work
+82 /home/teoh/cpre381/cpre3810_Proj1Part2_HW/cpre3810-toolflow/proj/src/TopLevel/work
+7
+6 id_exe
 3
 10 structural
 5
@@ -29,8 +33,92 @@
 ]
 [G
 1
+2
+3
+2
+4
+1
+0
+5
+0
+0 0
+0
+0
+]
+[G
+1
+2
+3
+3
+4
+1
+0
+3
+0
+0 0
+0
+0
+]
+[G
+1
+2
+3
+4
+4
+1
+0
+4
+0
+0 0
+0
+0
+]
+[G
+1
+2
+3
+5
+4
+1
+0
+2
+0
+0 0
+0
+0
+]
+[G
+1
 5
 6
+1
+4
+1
+0
+32
+0
+0 0
+0
+0
+]
+[G
+1
+7
+3
+1
+4
+1
+0
+32
+0
+0 0
+0
+0
+]
+[G
+1
+8
+3
 1
 4
 1
