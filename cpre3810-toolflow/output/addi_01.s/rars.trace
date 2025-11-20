@@ -1,4 +1,4 @@
-Warning in /home/teoh/cpre381/cpre3810_Proj1/cpre3810-toolflow/proj/riscv/addi_01.s line 3 column 1: RARS does not recognize the .option directive.  Ignored.
+Warning in /home/teoh/cpre381/cpre3810_Proj1Part2_HW/cpre3810-toolflow/proj/riscv/addi_01.s line 3 column 1: RARS does not recognize the .option directive.  Ignored.
 
 [inst #1] addi x1,x0,0
 Register Write to Reg: 0x01 Val: 0x00000000

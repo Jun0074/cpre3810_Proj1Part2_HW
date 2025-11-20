@@ -3,7 +3,7 @@ Reading pref.tcl
 # 2025.1_2
 
 # vsim -postsimdataflow -debugdb -c -voptargs=""+acc"" tb -do "modelsim_framework.do" -gOUTPUT_TRACE=ms.trace 
-# Start time: 14:56:39 on Oct 30,2025
+# Start time: 00:38:33 on Nov 20,2025
 # ** Note: (vsim-8009) Loading existing optimized design _opt
 # //  Questa Sim-64
 # //  Version 2025.1_2 linux_x86_64 Apr  7 2025
@@ -38,44 +38,45 @@ Reading pref.tcl
 # Loading work.org2(dataflow)#1
 # Loading work.ripple_adder_n(structural)#1
 # Loading work.full_adder(structure)#1
+# Loading work.mem(rtl)#1
+# Loading work.ifid_register(structure)#1
+# Loading work.regn(structural)#1
+# Loading work.dffg(mixed)#1
 # Loading work.control_unit(dataflow)#1
 # Loading work.regfile(structural)#1
 # Loading work.decoder5to32(dataflow)#1
-# Loading work.regn(structural)#1
-# Loading work.dffg(mixed)#1
 # Loading work.mux32to1_32bit(dataflow)#1
 # Loading work.immgen(behavioral)#1
 # Loading work.sign_extendernto32(behavioral)#1
 # Loading work.sign_extendernto32(behavioral)#2
 # Loading work.sign_extendernto32(behavioral)#3
 # Loading work.sign_extendernto32(behavioral)#4
-# Loading work.mem(rtl)#1
+# Loading work.id_exe(structural)#1
+# Loading work.regn(structural)#2
+# Loading work.regn(structural)#3
+# Loading work.regn(structural)#4
+# Loading work.regn(structural)#5
 # Loading work.alu(dataflow)#1
 # Loading work.barrelshifter32(rtl)#1
+# Loading work.ex_mem(structural)#1
+# Loading work.hazard_unit(rtl)#1
 # Loading work.loadtype(rtl)#1
+# Loading work.mem_wb(structural)#1
 # ** Note: (vsim-8716) Reusing existing debug database vsim.dbg.
 # do modelsim_framework.do
-# ** Warning: NUMERIC_STD."<": metavalue detected, returning FALSE
-#    Time: 0 ns  Iteration: 0  Instance: /tb/MyRiscv/u_ALU
-# ** Warning: NUMERIC_STD."<": metavalue detected, returning FALSE
-#    Time: 0 ns  Iteration: 0  Instance: /tb/MyRiscv/u_ALU
 # ** Warning: NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
 #    Time: 0 ns  Iteration: 0  Instance: /tb/MyRiscv/DMem
+# ** Warning: NUMERIC_STD."<": metavalue detected, returning FALSE
+#    Time: 0 ns  Iteration: 0  Instance: /tb/MyRiscv/u_ALU
+# ** Warning: NUMERIC_STD."<": metavalue detected, returning FALSE
+#    Time: 0 ns  Iteration: 0  Instance: /tb/MyRiscv/u_ALU
 # ** Warning: NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
 #    Time: 0 ns  Iteration: 0  Instance: /tb/MyRiscv/IMem
-# ** Warning: NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
-#    Time: 0 ns  Iteration: 4  Instance: /tb/MyRiscv/IMem
-# ** Warning: NUMERIC_STD."<": metavalue detected, returning FALSE
-#    Time: 0 ns  Iteration: 5  Instance: /tb/MyRiscv/u_ALU
-# ** Warning: NUMERIC_STD."<": metavalue detected, returning FALSE
-#    Time: 0 ns  Iteration: 5  Instance: /tb/MyRiscv/u_ALU
-# ** Warning: NUMERIC_STD.TO_INTEGER: metavalue detected, returning 0
-#    Time: 0 ns  Iteration: 9  Instance: /tb/MyRiscv/DMem
-# ** Note: Data structure takes 55424784 bytes of memory
-#          Process time 0.08 seconds
+# ** Note: Data structure takes 60560928 bytes of memory
+#          Process time 0.12 seconds
 #          stop
-#    Time: 140 ns  Iteration: 1  Instance: /tb
-# Break in Process P_DUMP_STATE at /home/teoh/cpre381/cpre3810_Proj1/cpre3810-toolflow/internal/testpy/tb.vhd line 150
-# Stopped at /home/teoh/cpre381/cpre3810_Proj1/cpre3810-toolflow/internal/testpy/tb.vhd line 150
-# End time: 14:56:39 on Oct 30,2025, Elapsed time: 0:00:00
-# Errors: 0, Warnings: 8
+#    Time: 260 ns  Iteration: 1  Instance: /tb
+# Break in Process P_DUMP_STATE at /home/teoh/cpre381/cpre3810_Proj1Part2_HW/cpre3810-toolflow/internal/testpy/tb.vhd line 150
+# Stopped at /home/teoh/cpre381/cpre3810_Proj1Part2_HW/cpre3810-toolflow/internal/testpy/tb.vhd line 150
+# End time: 00:38:34 on Nov 20,2025, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 4

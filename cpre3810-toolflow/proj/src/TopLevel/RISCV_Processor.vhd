@@ -2,16 +2,17 @@
 -- Henry Duwe
 -- Department of Electrical and Computer Engineering
 -- Iowa State University
--------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 -- Author: Tian Jun Teoh, Austin Nguyen
 -- RISCV_Processor.vhd
--------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- DESCRIPTION: This file contains a skeleton of a RISCV_Processor  
 -- implementation.
 
--- 01/29/2019 by H3::Design created.
--------------------------------------------------------------------------
+-- 11/20/2025 - Updated to Part 2 version with hazard unit and data forwarding 
+-- A fully functioning Hardware scheduled Pipeline Processor Implementation
+--------------------------------------------------------------------------------
 
 
 library IEEE;
@@ -28,7 +29,7 @@ entity RISCV_Processor is
        iInstLd         : in std_logic;
        iInstAddr       : in std_logic_vector(N-1 downto 0);
        iInstExt        : in std_logic_vector(N-1 downto 0);
-       oALUOut         : out std_logic_vector(N-1 downto 0); -- TODO: Hook this up to the output of the ALU. It is important for synthesis that you have this output that can effectively be impacted by all other components so they are not optimized away.
+       oALUOut         : out std_logic_vector(N-1 downto 0);
        oHalt           : out std_logic); -- added output for halt
 end  RISCV_Processor;
 
@@ -83,6 +84,11 @@ architecture structure of RISCV_Processor is
   signal s_Zero     : std_logic;
   signal s_LT       : std_logic;
   signal s_LTU      : std_logic;
+
+  -- Forwarding control (EX stage)
+  signal forwardA, forwardB : std_logic_vector(1 downto 0);
+  signal rs1_val_ex, rs2_val_ex : std_logic_vector(31 downto 0);
+
 
   -- PC select (branch/jump)
   signal s_PCsrc    : std_logic;
@@ -167,6 +173,8 @@ architecture structure of RISCV_Processor is
   signal exmem_ResultSrc : std_logic_vector(1 downto 0);
   signal exmem_LoadType  : std_logic_vector(2 downto 0);
   signal exmem_Halt      : std_logic;
+  -- NEW signal for EX/MEM forwarding value
+  signal exmem_ForwardVal : std_logic_vector(31 downto 0);
 
   -- MEM/WB
   signal memwb_ReadData  : std_logic_vector(31 downto 0);
@@ -195,8 +203,6 @@ architecture structure of RISCV_Processor is
     );
   end component;
 
--- TODO: Immediate generator (outputs I/S/B/U/J immediates per s_ImmType)
-
   -- control unit
   component control_unit is
     port(
@@ -222,16 +228,14 @@ architecture structure of RISCV_Processor is
 
   component hazard_unit is
   port(
-    ifid_Inst       : in  std_logic_vector(31 downto 0);
-    idex_rd         : in  std_logic_vector(4 downto 0);
-    idex_RegWrite   : in  std_logic;
-    exmem_rd        : in  std_logic_vector(4 downto 0);
-    exmem_RegWrite  : in  std_logic;
-    s_PCsrc_taken   : in  std_logic;  -- (s_BrTaken or idex_Jump)
-    stallF          : out std_logic;
-    stallD          : out std_logic;
-    flushD          : out std_logic;  -- squash IF/ID
-    flushE          : out std_logic   -- bubble ID/EX
+      ifid_Inst      : in  std_logic_vector(31 downto 0);
+      idex_rd        : in  std_logic_vector(4 downto 0);
+      idex_MemRead   : in  std_logic;
+      s_PCsrc_taken  : in  std_logic;
+      stallF         : out std_logic;
+      stallD         : out std_logic;
+      flushD         : out std_logic;
+      flushE         : out std_logic
   );
   end component;
 
@@ -486,13 +490,40 @@ begin
       idex_ALUOp => idex_ALUOp, idex_ResultSrc => idex_ResultSrc
     );
 
- 
+    
+  -- Forwarding unit: choose between ID/EX, EX/MEM, MEM/WB (WB value)
+  -- Priority: EX/MEM (10) > MEM/WB (01) > ID/EX (00)
+  forwardA <= "10" when (exmem_RegWrite = '1' and exmem_rd /= "00000" and
+                         exmem_rd = idex_rs1 and exmem_ResultSrc /= "01") else
+              "01" when (memwb_RegWrite = '1' and memwb_rd  /= "00000" and
+                         memwb_rd  = idex_rs1) else
+              "00";
+
+  forwardB <= "10" when (exmem_RegWrite = '1' and exmem_rd /= "00000" and
+                         exmem_rd = idex_rs2 and exmem_ResultSrc /= "01") else
+              "01" when (memwb_RegWrite = '1' and memwb_rd  /= "00000" and
+                         memwb_rd  = idex_rs2) else
+              "00";
+
+  -- MEM/WB source is always s_RegWrData which is the actual value written to RegFile
+  with forwardA select
+    rs1_val_ex <= idex_oRS1        when "00",   -- no hazard
+                  exmem_ForwardVal when "10",   -- EX/MEM "true" result
+                  s_RegWrData      when others; -- "01" (MEM/WB) 
+
+  with forwardB select
+    rs2_val_ex <= idex_oRS2        when "00",
+                  exmem_ForwardVal when "10",
+                  s_RegWrData      when others;
+
+
   -- EXE stage
   -- ALU Input MUX 1, operand A: 0=RS1, 1=PC
-  s_ALU_A <= idex_PC  when idex_ALUSrcA = '1' else idex_oRS1;
-
+  --s_ALU_A <= idex_PC  when idex_ALUSrcA = '1' else idex_oRS1;
+  s_ALU_A <= idex_PC  when idex_ALUSrcA = '1' else rs1_val_ex;
   -- ALU Input MUX 2, operand B: 0=RS2, 1=Imm
-  s_ALU_B <= idex_Imm when idex_ALUSrc  = '1' else idex_oRS2;
+  --s_ALU_B <= idex_Imm when idex_ALUSrc  = '1' else idex_oRS2;
+  s_ALU_B <= idex_Imm when idex_ALUSrc  = '1' else rs2_val_ex;
 
   u_ALU: ALU
     port map(
@@ -549,7 +580,8 @@ begin
     port map(
       i_CLK => iCLK, i_RST => iRST, i_WE => '1',
       i_ALUResult => s_ALUResult,
-      i_RS2 => idex_oRS2,
+      --i_RS2 => idex_oRS2,
+      i_RS2 => rs2_val_ex,  -- forwarded value
       i_rd  => idex_rd,
       i_PCplus4 => idex_PCplus4,
       i_Imm => idex_Imm,
@@ -571,20 +603,33 @@ begin
       exmem_LoadType  => exmem_LoadType
     );
 
-    --Hazard unit (no-forwarding baseline) 
+  -- EX/MEM result for forwarding
+  -- ResultSrc encoding:
+  --   00 = ALU
+  --   01 = MEM   (load; data not ready in EX/MEM, so we will NOT forward from here)
+  --   10 = PC+4  (JAL / JALR link)
+  --   11 = ImmU  (LUI)
+  with exmem_ResultSrc select
+    exmem_ForwardVal <= exmem_ALUResult when "00",  -- normal ALU, AUIPC, etc.
+                        exmem_PCplus4   when "10",  -- JAL / JALR rd = PC+4
+                        exmem_Imm       when "11",  -- LUI rd = ImmU
+                        exmem_ALUResult when others;
+                        -- "01" (load) is never used from EX/MEM because it is gated off in forwarding
+
+
+  --Hazard unit supporting forwarding already
   HU: hazard_unit
   port map(
     ifid_Inst      => ifid_Inst,
     idex_rd        => idex_rd,
-    idex_RegWrite  => idex_RegWrite,
-    exmem_rd       => exmem_rd,
-    exmem_RegWrite => exmem_RegWrite,
-    s_PCsrc_taken  => s_PCsrc, -- (s_BrTaken or idex_Jump)
+    idex_MemRead   => idex_MemRead,  -- from ID/EX pipeline reg
+    s_PCsrc_taken  => s_PCsrc,       -- s_BrTaken or idex_Jump
     stallF         => stallF,
     stallD         => stallD,
     flushD         => flushD,
     flushE         => flushE
   );
+
 
   -- Connect EX/MEM outputs to data memory inputs' 
   -- Data Memory
